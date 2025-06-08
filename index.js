@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import UserRoutes from './routes/users.js'
 import connectDB from './database/db.js'
+import ListRoutes from './routes/TodoList.js'
+
 
 app.use(express.json())
 app.use(cors())
@@ -13,10 +15,7 @@ app.use(cookieParser())
 
 connectDB()
 app.use('/users', UserRoutes)
-
-// app.get('/', (req, res) => {
-//   res.send(data )
-// })
+app.use('/lists', ListRoutes)
 
 app.listen(port, () => {
   console.log(`server running on port ${port}`)
