@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllLists, createNewList, getListById, deleteList, updateList } from '../controllers/TodoList.js';
+import { getAllLists, createNewList, getListById, deleteList, updateList } from '../controllers/TodoListController.js';
 const router = express.Router();
 // Route to get all lists
 router.get('/', getAllLists);

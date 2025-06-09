@@ -2,7 +2,7 @@
 
  const router = express.Router()
 
-import { createNewUsers ,getUsers, getUserById, deleteUser, updateUser} from '../controllers/users.js';
+import { createNewUsers ,getUsers, getUserById, deleteUser, updateUser} from '../controllers/userController.js';
 
  router.get('/', getUsers)
 
