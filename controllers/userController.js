@@ -1,45 +1,126 @@
-import { v4 as uuidv4 } from 'uuid';
+import authEntity from '../entity/authEntity.js';
 
+// Get current authenticated user's profile
+export const getCurrentUser = async (req, res) => {
+  try {
+    // req.user is set by the authenticateToken middleware
+    const user = await authEntity.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-let users = []
-export const getUsers = (req,res) =>{
-    res.send(users);
- }
+// Get all users (admin function - you might want to restrict this)
+export const getUsers = async (req, res) => {
+  try {
+    const users = await authEntity.find().select('-password');
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
- export const createNewUsers = (req, res) =>{
-
-    const newUsers = req.body;
-
+// Create new user (this should probably redirect to auth/register)
+export const createNewUsers = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
     
-    const usersWithIds = newUsers.map(user => ({ ...user, id: uuidv4() }));
-    users.push(...usersWithIds);
+    // Check if user already exists
+    const existingUser = await authEntity.findOne({ 
+      $or: [{ email }, { username }] 
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
 
-    res.send(`${usersWithIds.length} user(s) added to the database`);
+    // Create new user
+    const newUser = new authEntity({ username, email, password });
+    await newUser.save();
+    
+    // Return user without password
+    const userResponse = await authEntity.findById(newUser._id).select('-password');
+    res.status(201).json({ 
+      message: 'User created successfully', 
+      user: userResponse 
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
- }
-
- export const getUserById = (req,res)=>{
+// Get user by ID
+export const getUserById = async (req, res) => {
+  try {
     const { id } = req.params;
-    const foundUser = users.find((user) => user.id === id);
-    res.send(foundUser)
- }
-
- export const deleteUser = (req,res)=>{
-    const {id} = req.params;
-    users = users.filter((user) => user.id !== id);
-    res.send(`User with the id ${id} deleted from the database`);
- }
-
- export const updateUser = (req, res) =>{
-    const {id} =req.params;
-    const {name,age} = req.body
-    const user= users.find((user) => user.id === id)
-
-    if(name){
-        user.name = name;
+    const user = await authEntity.findById(id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-    if(age){
-        user.age = age;
+    
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Delete user
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if user is trying to delete themselves
+    if (req.user._id.toString() === id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
     }
-    res.send(`User with the id ${id} updated in the database`);
- }
+    
+    const deletedUser = await authEntity.findByIdAndDelete(id);
+    
+    if (!deletedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.status(200).json({ message: `User ${deletedUser.username} deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update user
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, email } = req.body;
+    
+    // Only allow users to update their own profile or admin functionality
+    if (req.user._id.toString() !== id) {
+      return res.status(403).json({ error: 'You can only update your own profile' });
+    }
+    
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    
+    const updatedUser = await authEntity.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.status(200).json({ 
+      message: 'User updated successfully', 
+      user: updatedUser 
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
