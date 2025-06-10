@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 
 const todoSchema = new mongoose.Schema({
@@ -19,6 +18,12 @@ const todoSchema = new mongoose.Schema({
       type: String,
       enum: ['low', 'medium', 'high'],
       default: 'medium',
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     }
-  });
-  export default mongoose.model('Todo', todoSchema);
+  }, { timestamps: true });
+  
+export default mongoose.model('Todo', todoSchema);
