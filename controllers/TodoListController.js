@@ -65,7 +65,7 @@ export const deleteList = async (req, res) => {
       userId: req.user._id 
     });
     if (!deletedList) return res.status(404).json({ error: 'List not found' });
-    res.status(200).json({ message: 'List deleted successfully' });
+    res.status(200).json({ message: 'List deleted successfully ' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
